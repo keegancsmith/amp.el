@@ -58,6 +58,11 @@
   :type 'directory
   :group 'amp)
 
+(defcustom amp-debug-logging nil
+  "Enable debug logging for Amp IDE WebSocket communication."
+  :type 'boolean
+  :group 'amp)
+
 ;;; Variables
 
 (defvar amp--ide-servers (make-hash-table :test 'equal)
@@ -101,23 +106,24 @@
 DIRECTION should be 'incoming' or 'outgoing'.
 PROJECT-DIR is the project directory.
 MESSAGE is the WebSocket message (string or object)."
-  (let ((buffer (amp--get-debug-buffer))
-        (timestamp (format-time-string "%H:%M:%S.%3N"))
-        (project-name (file-name-nondirectory (directory-file-name project-dir)))
-        (message-str (if (stringp message) message (json-encode message))))
-    (with-current-buffer buffer
-      (goto-char (point-max))
-      (insert (format "[%s] %s [%s]: %s\n"
-                      timestamp
-                      (upcase (symbol-name direction))
-                      project-name
-                      message-str))
-      ;; Keep buffer size reasonable (last 1000 lines)
-      (let ((lines (count-lines (point-min) (point-max))))
-        (when (> lines 1000)
-          (goto-char (point-min))
-          (forward-line (- lines 1000))
-          (delete-region (point-min) (point)))))))
+  (when amp-debug-logging
+    (let ((buffer (amp--get-debug-buffer))
+          (timestamp (format-time-string "%H:%M:%S.%3N"))
+          (project-name (file-name-nondirectory (directory-file-name project-dir)))
+          (message-str (if (stringp message) message (json-encode message))))
+      (with-current-buffer buffer
+        (goto-char (point-max))
+        (insert (format "[%s] %s [%s]: %s\n"
+                        timestamp
+                        (upcase (symbol-name direction))
+                        project-name
+                        message-str))
+        ;; Keep buffer size reasonable (last 1000 lines)
+        (let ((lines (count-lines (point-min) (point-max))))
+          (when (> lines 1000)
+            (goto-char (point-min))
+            (forward-line (- lines 1000))
+            (delete-region (point-min) (point))))))))
 
 ;;; Utility Functions
 
