@@ -108,10 +108,10 @@ MESSAGE is the WebSocket message (string or object)."
     (with-current-buffer buffer
       (goto-char (point-max))
       (insert (format "[%s] %s [%s]: %s\n"
-                     timestamp
-                     (upcase (symbol-name direction))
-                     project-name
-                     message-str))
+                      timestamp
+                      (upcase (symbol-name direction))
+                      project-name
+                      message-str))
       ;; Keep buffer size reasonable (last 1000 lines)
       (let ((lines (count-lines (point-min) (point-max))))
         (when (> lines 1000)
