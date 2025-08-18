@@ -1,0 +1,60 @@
+#+TITLE: amp.el
+#+AUTHOR: Keegan Carruthers-Smith
+#+AUTHOR: Amp <amp@ampcode.com>
+
+An unofficial Emacs client for Amp's IDE mode. Because who needs JetBrains
+when you have the one true editor?
+
+Heavily inspired by [[https://github.com/manzaltu/claude-code-ide.el][claude-code-ide.el]]
+
+* Status
+
+This is very much a work in progress. The basic plumbing works, but expect
+rough edges. Currently implements the core WebSocket protocol that Amp's
+=--jetbrains= flag expects.
+
+* Usage
+
+1. Load the package:
+   #+begin_src elisp
+   (load-file "amp.el")
+   #+end_src
+
+2. Start the IDE server for your current project:
+   #+begin_src
+   M-x amp-start-ide-server
+   #+end_src
+
+3. Launch Amp in another terminal:
+   #+begin_src shell
+   amp --jetbrains
+   #+end_src
+
+4. Watch the magic happen. Or debug with =M-x amp-debug-buffer= when it doesn't.
+
+* What Works
+
+- Project-aware WebSocket servers
+- File and selection tracking
+- Basic authentication with Amp CLI
+- Automatic cleanup (mostly)
+
+* What Doesn't
+
+- Probably a lot.
+
+* Requirements
+
+- Emacs 28.1+
+- =websocket= package
+- =project= package (built-in)
+- Amp CLI that supports =--jetbrains= flag
+
+* Commands
+
+| Command                | Purpose                          |
+|------------------------+----------------------------------|
+| =amp-start-ide-server= | Start server for current project |
+| =amp-stop-ide-server=  | Stop server for current project  |
+| =amp-ide-status=       | Show connection status           |
+| =amp-debug-buffer=     | View WebSocket debug logs        |
