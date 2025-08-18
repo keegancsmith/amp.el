@@ -16,19 +16,19 @@ rough edges. Currently implements the core WebSocket protocol that Amp's
 * Usage
 
 1. Load the package:
-   #+begin_src elisp
-   (load-file "amp.el")
-   #+end_src
+#+begin_src elisp
+(load-file "amp.el")
+#+end_src
 
 2. Start the IDE server for your current project:
-   #+begin_src
-   M-x amp-start-ide-server
-   #+end_src
+#+begin_src
+M-x amp-start-ide-server
+#+end_src
 
 3. Launch Amp in another terminal:
-   #+begin_src shell
-   amp --jetbrains
-   #+end_src
+#+begin_src shell
+amp --jetbrains
+#+end_src
 
 4. Watch the magic happen. Or debug with =M-x amp-debug-buffer= when it doesn't.
 
