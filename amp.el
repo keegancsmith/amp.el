@@ -72,6 +72,9 @@
 (defvar amp--selection-delay 0.05
   "Delay in seconds before sending selection changes.")
 
+(defvar amp--last-selection-state nil
+  "Last known selection state to avoid unnecessary updates.")
+
 (defconst amp-ide-version "0.0.1"
   "Version of the Amp IDE integration.")
 
@@ -265,10 +268,13 @@ MESSAGE is the WebSocket message (string or object)."
 
 (defun amp--track-selection-change ()
   "Track and send selection changes to Amp with debouncing."
-  (when amp--selection-timer
-    (cancel-timer amp--selection-timer))
-  (setq amp--selection-timer
-        (run-at-time amp--selection-delay nil #'amp--send-selection-update)))
+  (let ((current-state (list (amp--current-file-uri) (use-region-p) (when (use-region-p) (region-beginning)) (when (use-region-p) (region-end)))))
+    (unless (equal current-state amp--last-selection-state)
+      (setq amp--last-selection-state current-state)
+      (when amp--selection-timer
+        (cancel-timer amp--selection-timer))
+      (setq amp--selection-timer
+            (run-at-time amp--selection-delay nil #'amp--send-selection-update)))))
 
 (defun amp--send-selection-update ()
   "Send the current selection state to Amp."
@@ -401,7 +407,8 @@ MESSAGE is the WebSocket message (string or object)."
   (clrhash amp--ide-clients)
   (when amp--selection-timer
     (cancel-timer amp--selection-timer)
-    (setq amp--selection-timer nil)))
+    (setq amp--selection-timer nil))
+  (setq amp--last-selection-state nil))
 
 ;; Clean up on Emacs exit
 (add-hook 'kill-emacs-hook #'amp--stop-all-servers)
