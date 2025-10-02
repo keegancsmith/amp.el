@@ -235,14 +235,21 @@ One of: trace, debug, info, warn, error."
           (if (not full-content)
               (amp--send-ide ws (amp--wrap-error id '((code . -32602) (message . "Invalid params") (data . "editFile requires fullContent parameter"))))
             (condition-case err
-                (let* ((full-path (expand-file-name path))
-                       (bufnr (or (find-buffer-visiting full-path)
-                                  (find-file-noselect full-path))))
-                  (with-current-buffer bufnr
-                    (erase-buffer)
-                    (insert full-content)
-                    (save-buffer))
-                  (amp--send-ide ws (amp--wrap-response id `((editFile . ((success . t) (message . ,(format "Edit applied successfully to %s" path)) (appliedChanges . t)))))))
+            (let* ((full-path (expand-file-name path))
+            (bufnr (or (find-buffer-visiting full-path)
+            (find-file-noselect full-path))))
+            (with-current-buffer bufnr
+            (let ((saved-point (point))
+                  (saved-window-start (and (get-buffer-window bufnr)
+                                          (window-start (get-buffer-window bufnr)))))
+                (erase-buffer)
+                       (insert full-content)
+                       (goto-char (min saved-point (point-max)))
+                       (when saved-window-start
+                         (set-window-start (get-buffer-window bufnr)
+                                          (min saved-window-start (point-max))))
+                       (save-buffer)))
+                   (amp--send-ide ws (amp--wrap-response id `((editFile . ((success . t) (message . ,(format "Edit applied successfully to %s" path)) (appliedChanges . t)))))))
               (error
                (amp--send-ide ws (amp--wrap-response id `((editFile . ((success . :json-false) (message . ,(error-message-string err)))))))))))))
 
