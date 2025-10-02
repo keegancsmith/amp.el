@@ -252,16 +252,23 @@ One of: trace, debug, info, warn, error."
 
 (defun amp--send-ide (ws data)
   "Send IDE protocol DATA to websocket WS."
-  (let ((json-message (json-encode data)))
-    (websocket-send-text ws json-message)))
+  (when (websocket-openp ws)
+    (let ((json-message (json-encode data)))
+      (condition-case err
+          (websocket-send-text ws json-message)
+        (error
+         (amp--log 'warn "server" "Failed to send message: %s" (error-message-string err)))))))
 
 (defun amp--broadcast-ide (notification)
   "Broadcast IDE NOTIFICATION to all connected clients."
   (when amp--clients
-    (let ((message (amp--wrap-notification notification))
-          (json-message (json-encode (amp--wrap-notification notification))))
+    (let ((json-message (json-encode (amp--wrap-notification notification))))
       (dolist (client amp--clients)
-        (websocket-send-text client json-message)))))
+        (when (websocket-openp client)
+          (condition-case err
+              (websocket-send-text client json-message)
+            (error
+             (amp--log 'warn "server" "Failed to broadcast to client: %s" (error-message-string err)))))))))
 
 (defun amp--on-client-connect (ws)
   "Handle client connection from WS."
@@ -383,78 +390,19 @@ One of: trace, debug, info, warn, error."
         (amp--broadcast-ide `((visibleFilesDidChange . ((uris . ,(vconcat files))))))
         (amp--log 'debug "visible-files" "Visible files changed, count: %d" (length files))))))
 
-;;; Diagnostics Tracking
-
-(defun amp--severity-to-jetbrains (severity)
-  "Convert Emacs SEVERITY to JetBrains severity."
-  (pcase severity
-    ('error "ERROR")
-    ('warning "WARNING")
-    ('note "INFO")
-    (_ "WEAK_WARNING")))
-
-(defun amp--flymake-diagnostic-to-jetbrains (diagnostic)
-  "Convert Flymake DIAGNOSTIC to JetBrains format."
-  (let* ((buffer (flymake-diagnostic-buffer diagnostic))
-         (beg (flymake-diagnostic-beg diagnostic))
-         (end (flymake-diagnostic-end diagnostic))
-         (type (flymake-diagnostic-type diagnostic))
-         (text (flymake-diagnostic-text diagnostic)))
-    (with-current-buffer buffer
-      (let* ((beg-line (1- (line-number-at-pos beg)))
-             (beg-col (- beg (save-excursion (goto-char beg) (line-beginning-position))))
-             (end-line (1- (line-number-at-pos end)))
-             (end-col (- end (save-excursion (goto-char end) (line-beginning-position))))
-             (line-content (buffer-substring-no-properties
-                           (save-excursion (goto-char beg) (line-beginning-position))
-                           (save-excursion (goto-char beg) (line-end-position)))))
-        `((range . ((startLine . ,beg-line)
-                   (startCharacter . ,beg-col)
-                   (endLine . ,end-line)
-                   (endCharacter . ,end-col)))
-          (severity . ,(amp--severity-to-jetbrains type))
-          (description . ,text)
-          (lineContent . ,line-content)
-          (startOffset . ,beg-col)
-          (endOffset . ,end-col))))))
-
-(defun amp--broadcast-diagnostics ()
-  "Broadcast diagnostics for all buffers."
-  (when amp--server
-    (let ((diagnostics-by-file (make-hash-table :test 'equal)))
-      ;; Collect flymake diagnostics
-      (dolist (buffer (buffer-list))
-        (when (buffer-file-name buffer)
-          (with-current-buffer buffer
-            (when (and (bound-and-true-p flymake-mode)
-                      (fboundp 'flymake-diagnostics))
-              (let ((diags (flymake-diagnostics)))
-                (when diags
-                  (let ((uri (concat "file://" (expand-file-name (buffer-file-name)))))
-                    (puthash uri
-                            (mapcar #'amp--flymake-diagnostic-to-jetbrains diags)
-                            diagnostics-by-file))))))))
-      ;; Broadcast each file's diagnostics
-      (maphash (lambda (uri diags)
-                 (amp--broadcast-ide `((diagnosticsDidChange . ((uri . ,uri)
-                                                               (diagnostics . ,(vconcat diags)))))))
-               diagnostics-by-file))))
-
 ;;; Hooks
 
 (defun amp--setup-hooks ()
   "Set up hooks for tracking selection, visible files, and diagnostics."
   (add-hook 'post-command-hook #'amp--debounced-selection-update)
   (add-hook 'window-configuration-change-hook #'amp--broadcast-visible-files)
-  (add-hook 'buffer-list-update-hook #'amp--broadcast-visible-files)
-  (add-hook 'flymake-diagnostic-functions #'amp--broadcast-diagnostics))
+  (add-hook 'buffer-list-update-hook #'amp--broadcast-visible-files))
 
 (defun amp--remove-hooks ()
   "Remove all Amp hooks."
   (remove-hook 'post-command-hook #'amp--debounced-selection-update)
   (remove-hook 'window-configuration-change-hook #'amp--broadcast-visible-files)
-  (remove-hook 'buffer-list-update-hook #'amp--broadcast-visible-files)
-  (remove-hook 'flymake-diagnostic-functions #'amp--broadcast-diagnostics))
+  (remove-hook 'buffer-list-update-hook #'amp--broadcast-visible-files))
 
 ;;; Server Management
 
@@ -467,8 +415,7 @@ One of: trace, debug, info, warn, error."
 (defun amp--send-initial-state ()
   "Send initial state to newly connected clients."
   (amp--broadcast-visible-files t)
-  (amp--update-selection)
-  (amp--broadcast-diagnostics))
+  (amp--update-selection))
 
 ;;;###autoload
 (defun amp-start ()

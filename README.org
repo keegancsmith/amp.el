@@ -17,7 +17,6 @@ by a human yet.
 Implements the same IDE protocol as amp.nvim, providing:
 - Selection tracking (cursor position and visual regions)
 - Visible files tracking across windows
-- Diagnostics integration (Flymake)
 - File read/edit operations
 - Message sending to Amp agent
 
@@ -53,16 +52,16 @@ amp --ide
   - Binds to localhost only on a random port (10000-65535)
   - Lockfile location: =$AMP_DATA_HOME/amp/ide/<port>.json= (or =$XDG_DATA_HOME/amp/ide/<port>.json=, defaults to =~/.local/share/amp/ide/<port>.json=)
   - Lockfile contains: port, authToken, pid, workspaceFolders, ideName
-  - On connect, sends initial state (visible files, selection, diagnostics) and pluginMetadata
+  - On connect, sends initial state (visible files, selection) and pluginMetadata
 - Selection tracking (cursor and visual regions, debounced updates)
 - Visible files tracking across all windows
-- Diagnostics integration (Flymake only - sent on initial connect, ongoing updates may be incomplete)
 - File reading and editing via Amp (editFile uses fullContent replacement)
 - Message sending (userSentMessage, appendToPrompt)
 - Automatic cleanup on Emacs exit
 
 * What Doesn't
 
+- Diagnostics (Flymake integration not yet implemented)
 - Authentication (auth token generated but not validated - authenticate always succeeds)
 - Multiple workspace folders (currently hardcoded to ["/"])
 
