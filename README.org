@@ -2,19 +2,24 @@
 #+AUTHOR: Keegan Carruthers-Smith
 #+AUTHOR: Amp <amp@ampcode.com>
 
-An unofficial Emacs client for Amp's IDE mode. Because who needs JetBrains
-when you have the one true editor?
+An unofficial Emacs client for Amp's IDE mode.
 
-Heavily inspired by [[https://github.com/manzaltu/claude-code-ide.el][claude-code-ide.el]]
+Ported from [[https://github.com/sourcegraph/amp.nvim][amp.nvim]]. Inspired by [[https://github.com/manzaltu/claude-code-ide.el][claude-code-ide.el]].
 
 * Status
 
-In rewrite now that we have support for nvim. Actively dogfooding and will
+Complete rewrite based on amp.nvim architecture. Actively dogfooding and will
 publish a proper version (likely on the Sourcegraph org) at some point.
 
-This is very much a work in progress. The basic plumbing works, but expect
-rough edges. Currently implements the core WebSocket protocol that Amp's
-=--jetbrains= flag expects.
+Do not trust this documentation yet, it was written by Amp and not validated
+by a human yet.
+
+Implements the same IDE protocol as amp.nvim, providing:
+- Selection tracking (cursor position and visual regions)
+- Visible files tracking across windows
+- Diagnostics integration (Flymake)
+- File read/edit operations
+- Message sending to Amp agent
 
 * Usage
 
@@ -23,41 +28,70 @@ rough edges. Currently implements the core WebSocket protocol that Amp's
 (load-file "amp.el")
 #+end_src
 
-2. Start the IDE server for your current project:
-#+begin_src
-M-x amp-start-ide-server
+2. Start the Amp server:
+#+begin_src elisp
+M-x amp-start
+#+end_src
+
+Or enable =amp-mode= for automatic startup:
+#+begin_src elisp
+(amp-mode 1)
 #+end_src
 
 3. Launch Amp in another terminal:
 #+begin_src shell
-amp --jetbrains
+amp --ide
 #+end_src
 
-4. Watch the magic happen. Or debug with =M-x amp-debug-buffer= when it doesn't.
+4. Open a file and move your cursor - Amp will track your selection automatically.
 
 * What Works
 
-- Project-aware WebSocket servers
-- File and selection tracking
-- Basic authentication with Amp CLI
-- Automatic cleanup (mostly)
+- WebSocket server with lockfile-based discovery
+- Selection tracking (cursor and visual regions)
+- Visible files tracking across all windows
+- Diagnostics integration (Flymake)
+- File reading and editing via Amp
+- Message sending (userSentMessage, appendToPrompt)
+- Automatic cleanup on Emacs exit
 
 * What Doesn't
 
-- Probably a lot.
+- Authentication (websocket library limitation)
+- Multiple workspace folders (only tracks current directory)
 
 * Requirements
 
-- Emacs 28.1+
-- =websocket= package
-- =project= package (built-in)
-- Amp CLI that supports =--jetbrains= flag
+- Emacs 27.1+
+- =websocket= package (1.14+)
+- Amp CLI that supports =--ide= flag
 
 * Commands
 
-| Command                | Purpose                          |
-|------------------------+----------------------------------|
-| =amp-start-ide-server= | Start server for current project |
-| =amp-stop-ide-server=  | Stop server for current project  |
-| =amp-ide-status=       | Show connection status           |
-| =amp-debug-buffer=     | View WebSocket debug logs        |
+| Command              | Purpose                                    |
+|----------------------+--------------------------------------------|
+| =amp-start=          | Start Amp WebSocket server                 |
+| =amp-stop=           | Stop Amp WebSocket server                  |
+| =amp-status=         | Show server status and connection info     |
+| =amp-send-message=   | Send a message to the Amp agent            |
+| =amp-send-region=    | Send selected region to Amp agent          |
+| =amp-send-to-prompt= | Append text to Amp prompt field            |
+| =amp-mode=           | Toggle global Amp mode (auto-start server) |
+
+* Configuration
+
+#+begin_src elisp
+;; Customize log level (trace, debug, info, warn, error)
+(setq amp-log-level 'info)
+
+;; Enable auto-start when amp-mode is enabled
+(setq amp-auto-start t)
+
+;; Enable amp-mode globally
+(amp-mode 1)
+#+end_src
+
+* Debugging
+
+View logs in the =*amp-log*= buffer to see connection status, selection changes,
+and any errors. The log level can be controlled via =amp-log-level=.
