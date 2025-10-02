@@ -42,11 +42,6 @@
   :group 'tools
   :prefix "amp-")
 
-(defcustom amp-auto-start t
-  "Whether to automatically start the Amp server on initialization."
-  :type 'boolean
-  :group 'amp)
-
 (defcustom amp-log-level 'info
   "Logging level for Amp plugin.
 One of: trace, debug, info, warn, error."
@@ -604,8 +599,7 @@ One of: trace, debug, info, warn, error."
   :group 'amp
   :lighter " Amp"
   (if amp-mode
-      (when amp-auto-start
-        (amp-start))
+      (amp-start)
     (when amp--server
       (amp-stop))))
 
