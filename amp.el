@@ -478,8 +478,7 @@ One of: trace, debug, info, warn, error."
     (run-with-timer 0.2 nil
                     (lambda ()
                       (amp--broadcast-ide
-                       `((pluginMetadata . ((version . "0.1.0")
-                                          (pluginDirectory . ,(file-name-directory (locate-library "amp")))))))))
+                       `((pluginMetadata . ((version . "0.1.0")))))))
 
     (amp--log 'info "server" "Server started on port %d" port)
     (message "Amp server started on port %d" port)))
