@@ -358,7 +358,7 @@ One of: trace, debug, info, warn, error."
   (when amp--selection-timer
     (cancel-timer amp--selection-timer))
   (setq amp--selection-timer
-        (run-with-timer 0.01 nil #'amp--update-selection)))
+        (run-with-timer 0.1 nil #'amp--update-selection)))
 
 ;;; Visible Files Tracking
 
