@@ -148,7 +148,7 @@ One of: trace, debug, info, warn, error."
                      `((port . ,port)
                        (authToken . ,auth-token)
                        (pid . ,(emacs-pid))
-                       (workspaceFolders . [,(expand-file-name default-directory)])
+                       (workspaceFolders . ["/"])
                        (ideName . ,(format "Emacs %s" emacs-version))))))
     (unless (file-directory-p lock-dir)
       (make-directory lock-dir t))
