@@ -9,6 +9,9 @@ Heavily inspired by [[https://github.com/manzaltu/claude-code-ide.el][claude-cod
 
 * Status
 
+In rewrite now that we have support for nvim. Actively dogfooding and will
+publish a proper version (likely on the Sourcegraph org) at some point.
+
 This is very much a work in progress. The basic plumbing works, but expect
 rough edges. Currently implements the core WebSocket protocol that Amp's
 =--jetbrains= flag expects.
