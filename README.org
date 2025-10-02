@@ -23,9 +23,11 @@ Implements the same IDE protocol as amp.nvim, providing:
 
 * Usage
 
-1. Load the package:
+1. Install and load the package:
 #+begin_src elisp
-(load-file "amp.el")
+;; Add to load-path and load
+(add-to-list 'load-path "/path/to/directory/containing/amp.el")
+(require 'amp)
 #+end_src
 
 2. Start the Amp server:
@@ -33,7 +35,7 @@ Implements the same IDE protocol as amp.nvim, providing:
 M-x amp-start
 #+end_src
 
-Or enable =amp-mode= for automatic startup:
+Or enable the global minor mode =amp-mode= for automatic startup:
 #+begin_src elisp
 (amp-mode 1)
 #+end_src
@@ -48,23 +50,32 @@ amp --ide
 * What Works
 
 - WebSocket server with lockfile-based discovery
-- Selection tracking (cursor and visual regions)
+  - Binds to localhost only on a random port (10000-65535)
+  - Lockfile location: =$AMP_DATA_HOME/amp/ide/<port>.json= (or =$XDG_DATA_HOME/amp/ide/<port>.json=, defaults to =~/.local/share/amp/ide/<port>.json=)
+  - Lockfile contains: port, authToken, pid, workspaceFolders, ideName
+  - On connect, sends initial state (visible files, selection, diagnostics) and pluginMetadata
+- Selection tracking (cursor and visual regions, debounced updates)
 - Visible files tracking across all windows
-- Diagnostics integration (Flymake)
-- File reading and editing via Amp
+- Diagnostics integration (Flymake only - sent on initial connect, ongoing updates may be incomplete)
+- File reading and editing via Amp (editFile uses fullContent replacement)
 - Message sending (userSentMessage, appendToPrompt)
 - Automatic cleanup on Emacs exit
 
 * What Doesn't
 
-- Authentication (websocket library limitation)
-- Multiple workspace folders (only tracks current directory)
+- Authentication (auth token generated but not validated - authenticate always succeeds)
+- Multiple workspace folders (currently hardcoded to ["/"])
 
 * Requirements
 
-- Emacs 27.1+
-- =websocket= package (1.14+)
+- Emacs 28.1+
+- =websocket= package (1.12+)
 - Amp CLI that supports =--ide= flag
+
+Install the websocket package:
+#+begin_src elisp
+M-x package-install RET websocket RET
+#+end_src
 
 * Commands
 
@@ -84,10 +95,7 @@ amp --ide
 ;; Customize log level (trace, debug, info, warn, error)
 (setq amp-log-level 'info)
 
-;; Enable auto-start when amp-mode is enabled
-(setq amp-auto-start t)
-
-;; Enable amp-mode globally
+;; Enable amp-mode globally (automatically starts server)
 (amp-mode 1)
 #+end_src
 
