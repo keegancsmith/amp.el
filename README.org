@@ -18,6 +18,7 @@ Implements the same IDE protocol as amp.nvim, providing:
 - Selection tracking (cursor position and visual regions)
 - Visible files tracking across windows
 - File read/edit operations
+- Pull-based diagnostics (via Flymake/eglot)
 - Message sending to Amp agent
 
 * Usage
@@ -56,12 +57,13 @@ amp --ide
 - Selection tracking (cursor and visual regions, debounced updates)
 - Visible files tracking across all windows
 - File reading and editing via Amp (editFile uses fullContent replacement)
+- Pull-based diagnostics via Flymake (integrates with eglot/LSP)
+  - Supports getDiagnostics requests for files or directories
 - Message sending (userSentMessage, appendToPrompt)
 - Automatic cleanup on Emacs exit
 
 * What Doesn't
 
-- Diagnostics (Flymake integration not yet implemented)
 - Authentication (auth token generated but not validated - authenticate always succeeds)
 - Multiple workspace folders (currently hardcoded to ["/"])
 

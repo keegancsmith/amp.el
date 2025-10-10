@@ -14,7 +14,7 @@
   - Selection tracking (cursor + visual regions) via `post-command-hook`
   - Visible files tracking via window hooks
   - Diagnostics integration with Flymake
-  - IDE protocol handlers: `ping`, `authenticate`, `readFile`, `editFile`
+  - IDE protocol handlers: `ping`, `authenticate`, `readFile`, `editFile`, `getDiagnostics`
   - Message sending: `userSentMessage`, `appendToPrompt`
   - Automatic cleanup on Emacs exit via `kill-emacs-hook`
 
@@ -37,6 +37,10 @@ emacsclient --eval "(with-current-buffer (get-buffer \"*amp-log*\") (buffer-subs
 
 # Test selection tracking
 emacsclient --eval "(amp--get-current-selection)"
+
+# Test diagnostics (file or directory path)
+emacsclient --eval "(amp--get-diagnostics \"/path/to/file.ts\")"
+emacsclient --eval "(amp--get-diagnostics \"/path/to/directory\")"
 
 # Stop and restart (for reloading changes)
 emacsclient --eval "(progn (when amp--server (amp-stop)) (load-file \"$(pwd)/amp.el\") (amp-start))"

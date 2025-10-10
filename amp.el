@@ -253,6 +253,15 @@ One of: trace, debug, info, warn, error."
               (error
                (amp--send-ide ws (amp--wrap-response id `((editFile . ((success . :json-false) (message . ,(error-message-string err)))))))))))))
 
+     ;; Get diagnostics request
+     ((alist-get 'getDiagnostics request)
+      (let* ((diag-req (alist-get 'getDiagnostics request))
+             (path (alist-get 'path diag-req)))
+        (if (not path)
+            (amp--send-ide ws (amp--wrap-error id '((code . -32602) (message . "Invalid params") (data . "getDiagnostics requires path parameter"))))
+          (let ((entries (amp--get-diagnostics path)))
+            (amp--send-ide ws (amp--wrap-response id `((getDiagnostics . ((entries . ,entries))))))))))
+
      ;; Unknown request
      (t
       (amp--send-ide ws (amp--wrap-error id '((code . -32601) (message . "Method not found") (data . "Unknown IDE request method"))))))))
@@ -396,6 +405,73 @@ One of: trace, debug, info, warn, error."
         (setq amp--latest-visible-files files)
         (amp--broadcast-ide `((visibleFilesDidChange . ((uris . ,(vconcat files))))))
         (amp--log 'debug "visible-files" "Visible files changed, count: %d" (length files))))))
+
+;;; Diagnostics
+
+(defun amp--severity-to-protocol (severity)
+  "Convert SEVERITY to protocol format."
+  (pcase severity
+    ('flymake-error "error")
+    ('eglot-error "error")
+    (':error "error")
+    ('flymake-warning "warning")
+    ('eglot-warning "warning")
+    (':warning "warning")
+    ('flymake-note "info")
+    ('eglot-note "info")
+    (':note "info")
+    (_ "info")))
+
+(defun amp--diagnostic-to-protocol (diag)
+  "Convert Flymake diagnostic DIAG to protocol format."
+  (save-excursion
+    (let* ((beg (flymake-diagnostic-beg diag))
+           (end (flymake-diagnostic-end diag))
+           (beg-line (progn (goto-char beg) (1- (line-number-at-pos))))
+           (beg-col (- beg (line-beginning-position)))
+           (end-line (progn (goto-char end) (1- (line-number-at-pos))))
+           (end-col (- end (line-beginning-position)))
+           (line-content (buffer-substring-no-properties
+                         (line-beginning-position)
+                         (line-end-position))))
+      `((range . ((startLine . ,beg-line)
+                  (startCharacter . ,beg-col)
+                  (endLine . ,end-line)
+                  (endCharacter . ,end-col)))
+        (severity . ,(amp--severity-to-protocol (flymake-diagnostic-type diag)))
+        (description . ,(flymake-diagnostic-text diag))
+        (lineContent . ,line-content)
+        (startOffset . ,beg-col)
+        (endOffset . ,end-col)))))
+
+(defun amp--get-diagnostics (path)
+  "Get diagnostics for PATH (file or directory prefix).
+Returns an array of entries with uri and diagnostics."
+  (let ((abs-path (expand-file-name path))
+        (entries-by-uri (make-hash-table :test 'equal)))
+    ;; Collect diagnostics from all buffers
+    (dolist (buf (buffer-list))
+      (when-let ((buf-name (buffer-file-name buf)))
+        (let ((abs-buf-name (expand-file-name buf-name)))
+          ;; Check if buffer path starts with the requested path (prefix match)
+          (when (string-prefix-p abs-path abs-buf-name)
+            (with-current-buffer buf
+              (when (and (featurep 'flymake)
+                        (bound-and-true-p flymake-mode))
+                (let ((diags (mapcar #'amp--diagnostic-to-protocol
+                                   (flymake-diagnostics))))
+                  (when diags
+                    (let ((uri (concat "file://" abs-buf-name)))
+                      (puthash uri
+                              `((uri . ,uri)
+                                (diagnostics . ,(vconcat diags)))
+                              entries-by-uri))))))))))
+    ;; Convert hash table to array
+    (let ((entries nil))
+      (maphash (lambda (_key value)
+                 (push value entries))
+               entries-by-uri)
+      (vconcat entries))))
 
 ;;; Hooks
 
