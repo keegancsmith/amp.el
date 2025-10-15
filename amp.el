@@ -628,7 +628,8 @@ Returns an array of entries with uri and diagnostics."
   :group 'amp
   :lighter " Amp"
   (if amp-mode
-      (amp-start)
+      (unless amp--server
+        (amp-start))
     (when amp--server
       (amp-stop))))
 
