@@ -620,6 +620,7 @@ Returns an array of entries with uri and diagnostics."
 
   (amp--remove-lockfile amp--port)
   (amp--remove-hooks)
+  (remove-hook 'kill-emacs-hook #'amp--cleanup-on-exit)
 
   (websocket-server-close amp--server)
 
