@@ -62,6 +62,12 @@ Should be localhost (127.0.0.1) for security."
   :type 'string
   :group 'amp)
 
+(defcustom amp-selection-debounce-ms 150
+  "Delay in milliseconds before broadcasting selection changes.
+Lower values provide faster updates but may increase CPU usage."
+  :type 'integer
+  :group 'amp)
+
 ;;; State
 
 (defvar amp--server nil
@@ -420,7 +426,7 @@ Handles Windows paths and special characters correctly."
   (when amp--selection-timer
     (cancel-timer amp--selection-timer))
   (setq amp--selection-timer
-        (run-with-timer 0.1 nil #'amp--update-selection)))
+        (run-with-timer (/ amp-selection-debounce-ms 1000.0) nil #'amp--update-selection)))
 
 ;;; Visible Files Tracking
 
