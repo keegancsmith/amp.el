@@ -7,15 +7,21 @@
 - **Status**: Check connections with `M-x amp-status`
 
 ## Architecture
-- **Single file**: All code in amp.el (~550 lines) - Emacs Lisp package for Amp IDE integration
+- **Single file**: All code in amp.el (~650 lines) - Emacs Lisp package for Amp IDE integration
 - **Core protocol**: WebSocket server implementing Amp's IDE protocol (same as amp.nvim)
 - **Lockfile discovery**: Writes JSON lockfiles to `~/.local/share/amp/ide/{port}.json` for Amp CLI
+- **Security**:
+  - Authentication token validation enforced for all requests except ping
+  - Server binds to 127.0.0.1 by default
+  - Lockfile permissions set to 0600 (user-only)
+  - Lock directory permissions set to 0700 (user-only)
 - **Features**: 
-  - Selection tracking (cursor + visual regions) via `post-command-hook`
+  - Selection tracking (cursor + visual regions) via `post-command-hook` with configurable debounce
   - Visible files tracking via window hooks
-  - Diagnostics integration with Flymake
+  - Diagnostics integration with Flymake (eglot/LSP compatible)
   - IDE protocol handlers: `ping`, `authenticate`, `readFile`, `editFile`, `getDiagnostics`
   - Message sending: `userSentMessage`, `appendToPrompt`
+  - Proper file:// URI handling with percent-encoding (cross-platform)
   - Automatic cleanup on Emacs exit via `kill-emacs-hook`
 
 ## Testing via emacsclient

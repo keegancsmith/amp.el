@@ -130,6 +130,13 @@ M-x package-install RET websocket RET
 ;; Customize log level (trace, debug, info, warn, error)
 (setq amp-log-level 'info)
 
+;; Adjust selection debounce (milliseconds)
+(setq amp-selection-debounce-ms 150)
+
+;; Change host binding (default: "127.0.0.1")
+;; Only change if you need to bind to a different interface
+(setq amp-host "127.0.0.1")
+
 ;; Enable amp-mode globally (automatically starts server)
 (amp-mode 1)
 #+end_src
