@@ -605,8 +605,7 @@ Returns an array of entries with uri and diagnostics."
     (run-with-timer 0.2 nil
                     (lambda ()
                       (amp--broadcast-ide
-                       `((pluginMetadata . ((version . ,amp-version)
-                                           (pluginDirectory . ,user-emacs-directory)))))))
+                       `((pluginMetadata . ((version . ,amp-version)))))))
 
     (amp--log 'info "server" "Server started on port %d" port)
     (message "Amp server started on port %d" port)))
