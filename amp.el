@@ -168,10 +168,14 @@ Handles Windows paths and special characters correctly."
                        (pid . ,(emacs-pid))
                        (workspaceFolders . ["/"])
                        (ideName . ,(format "Emacs %s" emacs-version))))))
+    ;; Create directory with restrictive permissions
     (unless (file-directory-p lock-dir)
-      (make-directory lock-dir t))
+      (make-directory lock-dir t)
+      (ignore-errors (set-file-modes lock-dir #o700)))
+    ;; Write lockfile with restrictive permissions
     (with-temp-file lockfile-path
       (insert lock-data))
+    (ignore-errors (set-file-modes lockfile-path #o600))
     lockfile-path))
 
 (defun amp--remove-lockfile (port)
@@ -258,10 +262,10 @@ Handles Windows paths and special characters correctly."
         (if (not path)
             (amp--send-ide ws (amp--wrap-error id '((code . -32602) (message . "Invalid params") (data . "readFile requires path parameter"))))
           (condition-case err
-              (let ((content (with-temp-buffer
-                               (insert-file-contents path)
-                               (buffer-string))))
-                (amp--send-ide ws (amp--wrap-response id `((readFile . ((success . t) (content . ,content) (encoding . "utf-8")))))))
+              (let ((coding-system-for-read 'utf-8-unix))
+                (with-temp-buffer
+                  (insert-file-contents path)
+                  (amp--send-ide ws (amp--wrap-response id `((readFile . ((success . t) (content . ,(buffer-string)) (encoding . "utf-8"))))))))
             (error
              (amp--send-ide ws (amp--wrap-response id `((readFile . ((success . :json-false) (message . ,(error-message-string err))))))))))))
 
@@ -558,7 +562,7 @@ Returns an array of entries with uri and diagnostics."
         (setq server
               (websocket-server
                port
-               :host 'local
+               :host amp-host
                :on-open #'amp--on-client-connect
                :on-message #'amp--handle-websocket-message
                :on-close #'amp--on-client-disconnect
