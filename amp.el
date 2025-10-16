@@ -85,6 +85,9 @@ One of: trace, debug, info, warn, error."
 (defvar amp--event-listeners (make-hash-table :test 'equal)
   "Event listeners by event name.")
 
+(defvar amp--client-auth (make-hash-table :test 'eq)
+  "Hash table mapping WebSocket clients to their authentication state.")
+
 ;;; Logging
 
 (defvar amp--log-buffer "*amp-log*"
@@ -215,15 +218,32 @@ Handles Windows paths and special characters correctly."
 
 (defun amp--handle-ide-request (ws request)
   "Handle IDE REQUEST from websocket WS."
-  (let ((id (alist-get 'id request)))
+  (let ((id (alist-get 'id request))
+        (authed (gethash ws amp--client-auth)))
     (cond
-     ;; Ping request
+     ;; Ping request (allowed without authentication)
      ((alist-get 'ping request)
       (amp--send-ide ws (amp--wrap-response id `((ping . ((message . ,(alist-get 'message (alist-get 'ping request)))))))))
 
      ;; Authenticate request
      ((alist-get 'authenticate request)
-      (amp--send-ide ws (amp--wrap-response id '((authenticate . ((authenticated . t)))))))
+      (let* ((auth-req (alist-get 'authenticate request))
+             (given-token (alist-get 'authToken auth-req)))
+        (if (and (stringp given-token) (equal given-token amp--auth-token))
+            (progn
+              (puthash ws t amp--client-auth)
+              (amp--log 'info "server" "Client authenticated successfully")
+              (amp--send-ide ws (amp--wrap-response id '((authenticate . ((authenticated . t))))))
+              ;; Send initial state after authentication
+              (run-with-timer 0.05 nil #'amp--send-initial-state))
+          (amp--log 'warn "server" "Authentication failed: invalid token")
+          (amp--send-ide ws (amp--wrap-response id '((authenticate . ((authenticated . :json-false) (message . "Invalid authentication token"))))))
+          (websocket-close ws))))
+
+     ;; All other requests require authentication
+     ((not authed)
+      (amp--log 'warn "server" "Unauthenticated request blocked")
+      (amp--send-ide ws (amp--wrap-error id '((code . 401) (message . "Authentication required")))))
 
      ;; Read file request
      ((alist-get 'readFile request)
@@ -303,15 +323,15 @@ Handles Windows paths and special characters correctly."
 (defun amp--on-client-connect (ws)
   "Handle client connection from WS."
   (push ws amp--clients)
+  (puthash ws nil amp--client-auth)
   (setq amp--connected t)
-  (amp--log 'info "server" "Client connected")
-  (amp--emit 'client-connect ws)
-  ;; Send initial state after short delay
-  (run-with-timer 0.05 nil #'amp--send-initial-state))
+  (amp--log 'info "server" "Client connected (awaiting authentication)")
+  (amp--emit 'client-connect ws))
 
 (defun amp--on-client-disconnect (ws)
   "Handle client disconnection from WS."
   (setq amp--clients (delq ws amp--clients))
+  (remhash ws amp--client-auth)
   (when (null amp--clients)
     (setq amp--connected nil)
     (amp--log 'info "server" "Disconnected from Amp (no clients)"))
