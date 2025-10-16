@@ -56,6 +56,12 @@ One of: trace, debug, info, warn, error."
                  (const :tag "Error" error))
   :group 'amp)
 
+(defcustom amp-host "127.0.0.1"
+  "Host address to bind the WebSocket server to.
+Should be localhost (127.0.0.1) for security."
+  :type 'string
+  :group 'amp)
+
 ;;; State
 
 (defvar amp--server nil
@@ -614,6 +620,7 @@ Returns an array of entries with uri and diagnostics."
         amp--connected nil
         amp--latest-selection nil
         amp--latest-visible-files nil)
+  (clrhash amp--client-auth)
 
   (amp--log 'info "server" "Server stopped")
   (message "Amp server stopped"))
