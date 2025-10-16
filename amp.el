@@ -4,11 +4,12 @@
 ;; Copyright (C) 2025 Sourcegraph, Inc.
 
 ;; Author: Keegan Carruthers-Smith <keegan.csmith@gmail.com>
-;; Maintainer: Amp <amp@ampcode.com>
+;;         Amp <amp@ampcode.com>
 ;; Version: 0.0.2
 ;; Package-Requires: ((emacs "28.1") (websocket "1.12"))
-;; Keywords: tools, convenience, files
+;; Keywords: tools, convenience
 ;; URL: https://github.com/sourcegraph/amp.el
+;; Homepage: https://ampcode.com/
 
 ;; This file is not part of GNU Emacs.
 
