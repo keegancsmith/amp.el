@@ -38,6 +38,9 @@
 
 ;;; Configuration
 
+(defconst amp-version "0.0.2"
+  "Version of the amp.el package.")
+
 (defgroup amp nil
   "Amp IDE integration for Emacs."
   :group 'tools
@@ -555,7 +558,8 @@ Returns an array of entries with uri and diagnostics."
     (run-with-timer 0.2 nil
                     (lambda ()
                       (amp--broadcast-ide
-                       `((pluginMetadata . ((version . "0.1.0")))))))
+                       `((pluginMetadata . ((version . ,amp-version)
+                                           (pluginDirectory . ,user-emacs-directory)))))))
 
     (amp--log 'info "server" "Server started on port %d" port)
     (message "Amp server started on port %d" port)))
