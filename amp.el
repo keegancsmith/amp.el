@@ -686,5 +686,11 @@ Returns an array of entries with uri and diagnostics."
     (when amp--server
       (amp-stop))))
 
+(defun amp-unload-function ()
+  "Cleanup function called when unloading the amp package."
+  (when amp--server
+    (amp-stop))
+  nil)
+
 (provide 'amp)
 ;;; amp.el ends here

@@ -1,18 +1,16 @@
 #+TITLE: amp.el
 #+AUTHOR: Keegan Carruthers-Smith
-#+AUTHOR: Amp <amp@ampcode.com>
+#+MAINTAINER: Amp <amp@ampcode.com>
 
-An unofficial Emacs client for Amp's IDE mode.
+Official Emacs client for Amp's IDE mode.
 
 Ported from [[https://github.com/sourcegraph/amp.nvim][amp.nvim]]. Inspired by [[https://github.com/manzaltu/claude-code-ide.el][claude-code-ide.el]].
 
 * Status
 
-Complete rewrite based on amp.nvim architecture. Actively dogfooding and will
-publish a proper version (likely on the Sourcegraph org) at some point.
-
-Do not trust this documentation yet, it was written by Amp and not validated
-by a human yet.
+Production-ready implementation based on amp.nvim architecture. Fully implements
+the Amp IDE protocol with secure authentication, proper file URI handling, and
+reliable diagnostics integration.
 
 Implements the same IDE protocol as amp.nvim, providing:
 - Selection tracking (cursor position and visual regions)
@@ -21,51 +19,87 @@ Implements the same IDE protocol as amp.nvim, providing:
 - Pull-based diagnostics (via Flymake/eglot)
 - Message sending to Amp agent
 
-* Usage
+* Installation
 
-1. Install and load the package:
+** From MELPA (Recommended)
+
+#+begin_src elisp
+(use-package amp
+  :ensure t
+  :config
+  (amp-mode 1))  ; Auto-start server on Emacs startup
+#+end_src
+
+Or with =package.el=:
+#+begin_src elisp
+M-x package-install RET amp RET
+#+end_src
+
+** Manual Installation
+
 #+begin_src elisp
 ;; Add to load-path and load
 (add-to-list 'load-path "/path/to/directory/containing/amp.el")
 (require 'amp)
+(amp-mode 1)  ; Optional: auto-start server
 #+end_src
 
-2. Start the Amp server:
-#+begin_src elisp
-M-x amp-start
-#+end_src
+* Usage
 
-Or enable the global minor mode =amp-mode= for automatic startup:
-#+begin_src elisp
-(amp-mode 1)
-#+end_src
+1. Start the Amp server:
+   - If using =amp-mode=, the server starts automatically
+   - Or run =M-x amp-start= manually
 
-3. Launch Amp in another terminal:
+2. Launch Amp CLI in a terminal:
 #+begin_src shell
 amp --ide
 #+end_src
 
-4. Open a file and move your cursor - Amp will track your selection automatically.
+3. Amp will automatically:
+   - Track your cursor position and selections
+   - Monitor visible files across all windows
+   - Provide diagnostics from Flymake/eglot
+   - Allow file reading and editing through Emacs buffers
 
-* What Works
+* Features
 
-- WebSocket server with lockfile-based discovery
-  - Binds to localhost only on a random port (10000-65535)
+- **Secure WebSocket server** with lockfile-based discovery
+  - Binds to localhost (127.0.0.1) by default for security
+  - Random port (10000-65535) with restrictive lockfile permissions
   - Lockfile location: =$AMP_DATA_HOME/amp/ide/<port>.json= (or =$XDG_DATA_HOME/amp/ide/<port>.json=, defaults to =~/.local/share/amp/ide/<port>.json=)
   - Lockfile contains: port, authToken, pid, workspaceFolders, ideName
-  - On connect, sends initial state (visible files, selection) and pluginMetadata
-- Selection tracking (cursor and visual regions, debounced updates)
-- Visible files tracking across all windows
-- File reading and editing via Amp (editFile uses fullContent replacement)
-- Pull-based diagnostics via Flymake (integrates with eglot/LSP)
-  - Supports getDiagnostics requests for files or directories
-- Message sending (userSentMessage, appendToPrompt)
-- Automatic cleanup on Emacs exit
+  - Authentication token validation enforced
+  
+- **Selection tracking** (cursor and visual regions)
+  - Debounced updates (configurable via =amp-selection-debounce-ms=)
+  - Automatic broadcast on cursor movement
+  
+- **Visible files tracking** across all windows
 
-* What Doesn't
+- **File operations**
+  - Read files with proper UTF-8 encoding
+  - Edit files with full content replacement
+  - Proper file:// URI handling (cross-platform, percent-encoded)
+  
+- **Diagnostics integration**
+  - Pull-based diagnostics via Flymake
+  - Works with eglot/LSP automatically
+  - Supports file or directory requests
+  
+- **Message sending** (userSentMessage, appendToPrompt)
 
-- Authentication (auth token generated but not validated - authenticate always succeeds)
-- Multiple workspace folders (currently hardcoded to ["/"])
+- **Automatic cleanup** on Emacs exit or package unload
+
+* Security
+
+- Authentication tokens are validated for all requests (except ping)
+- Server binds only to localhost (127.0.0.1)
+- Lockfile permissions restricted to user-only (0600)
+- Lock directory permissions restricted to user-only (0700)
+
+* Limitations
+
+- Multiple workspace folders not yet implemented (currently hardcoded to ["/"])
 
 * Requirements
 
