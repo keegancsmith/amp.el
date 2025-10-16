@@ -1,13 +1,14 @@
 ;;; amp.el --- Amp IDE integration for Emacs  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025 Keegan Carruthers-Smith
+;; Copyright (C) 2025 Sourcegraph, Inc.
 
 ;; Author: Keegan Carruthers-Smith <keegan.csmith@gmail.com>
-;; Author: Amp <amp@ampcode.com>
+;; Maintainer: Amp <amp@ampcode.com>
 ;; Version: 0.0.2
 ;; Package-Requires: ((emacs "28.1") (websocket "1.12"))
-;; Keywords: amp, ai, agent, assistant
-;; URL: https://github.com/keegancsmith/amp.el
+;; Keywords: tools, convenience, files
+;; URL: https://github.com/sourcegraph/amp.el
 
 ;; This file is not part of GNU Emacs.
 
