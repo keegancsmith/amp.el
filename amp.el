@@ -114,6 +114,16 @@ One of: trace, debug, info, warn, error."
 
 ;;; Utility Functions
 
+(defun amp--file-uri (path)
+  "Convert PATH to a proper file:// URI with percent-encoding.
+Handles Windows paths and special characters correctly."
+  (let* ((abs (expand-file-name path))
+         (norm (if (eq system-type 'windows-nt)
+                   (concat "file:///" (subst-char-in-string ?\\ ?/ abs))
+                 (concat "file://" abs))))
+    ;; Percent-encode special characters
+    (url-hexify-string norm)))
+
 (defun amp--get-data-home ()
   "Get the data directory for Amp, following the same logic as amp.nvim."
   (or (getenv "AMP_DATA_HOME")
@@ -312,7 +322,7 @@ One of: trace, debug, info, warn, error."
 (defun amp--get-file-uri ()
   "Get the file URI for the current buffer."
   (when buffer-file-name
-    (concat "file://" (expand-file-name buffer-file-name))))
+    (amp--file-uri buffer-file-name)))
 
 (defun amp--get-cursor-selection ()
   "Get the current cursor position as a selection."
@@ -393,7 +403,7 @@ One of: trace, debug, info, warn, error."
              (name (buffer-file-name buf)))
         (when (and name (not (gethash name seen)))
           (puthash name t seen)
-          (push (concat "file://" (expand-file-name name)) uris))))
+          (push (amp--file-uri name) uris))))
     (nreverse uris)))
 
 (defun amp--visible-files-changed-p (new-files)
@@ -465,7 +475,7 @@ Returns an array of entries with uri and diagnostics."
                 (let ((diags (mapcar #'amp--diagnostic-to-protocol
                                    (flymake-diagnostics))))
                   (when diags
-                    (let ((uri (concat "file://" abs-buf-name)))
+                    (let ((uri (amp--file-uri abs-buf-name)))
                       (puthash uri
                               `((uri . ,uri)
                                 (diagnostics . ,(vconcat diags)))
